@@ -1,35 +1,20 @@
-# DECISIONS
+﻿# DECISIONS
 
-Answer **yourself**, in your own words, in 3–5 sentences per question.
-Refer to concrete files and classes from your own repo (for example `Features/Bookings/CreateBooking/...`).
-An unanswered question gives 0 points.
+## 1. O regulă pe care am mutat-o
+Am mutat regula R8 (interzicerea anulării unei rezervări care este deja anulată) și regula R7 (verificarea suprapunerii intervalelor) din `Services/BookingService.cs` în `Domain/Bookings/Booking.cs` (`Booking.Cancel`) și `Domain/Bookings/DateRange.cs` (`DateRange.Overlaps`). Mutându-le în domeniu, entitatea își protejează singură starea și niciun handler nu poate schimba `Status` fără să treacă prin aceste reguli.
 
-## 1. A rule you moved
-Pick one business rule (R1–R8). In which file did it live in the starter and in which file does it live now? Why there?
+## 2. Result în loc de excepție
+Faptul că o sală este ocupată este un caz normal de business, nu o eroare tehnică neașteptată, așa că `Result<T>` face eșecul vizibil direct în semnătura metodei, fără costul aruncării unei excepții. Când `CreateBookingHandler` întoarce `BookingErrors.RoomOccupied` (`ErrorType.Conflict`), `CreateBookingEndpoint` apelează `result.Error.ToProblem()` (`Common/Http/ErrorHttpExtensions.cs`), care îl transformă într-un răspuns JSON `ProblemDetails` cu status 409 Conflict.
 
-_(your answer here)_
+## 3. Cine știe de EF Core?
+Doar clasele din `Infrastructure/Persistence` (`RoomHubDbContext`, `EntityConfigurations`, `RoomRepository`, `BookingRepository`) și endpoint-urile de citire (`GetRoomByIdEndpoint`, `GetBookingByIdEndpoint`) știu de EF Core. Stratul `Domain` și handler-ele de comenzi folosesc doar interfețele `IRoomRepository`, `IBookingRepository` și `IUnitOfWork`. Câștigăm o logică de domeniu decuplată și ușor de testat, iar costul este scrierea unor interfețe și clase de repository în plus.
 
-## 2. Result instead of an exception
-Why is `Result` a better choice than an exception for "the room is occupied"? What happens in your code when an `Error` is returned?
+## 4. Fluxul unei cereri
+`CreateBookingEndpoint.Handle` (`Features/Bookings/CreateBooking/CreateBookingFeature.cs`) -> `CreateBookingHandler.HandleAsync` -> `RoomRepository.GetByIdAsync` (`Infrastructure/Persistence/Repositories/Repositories.cs`) -> `DateRange.Create` și `Booking.Create` (`Domain/Bookings/`) -> `BookingRepository.GetActiveForRoomAsync` și `CountActiveForParticipantOnDayAsync` -> `BookingRepository.Add` -> `RoomHubDbContext.SaveChangesAsync` (`IUnitOfWork`) -> SQLite (`roomhub.db`).
 
-_(your answer here)_
+## 5. Ce am respins sau corectat din ce a propus AI-ul
+Inițial, AI-ul a pus limita de 4 ore (R6) direct în `DateRange.Create`, ceea ce nu mai funcționa după apariția cerinței R10 (sălile cu capacitate peste 10 au limită de 2 ore). Am mutat verificarea duratei din `DateRange.Create` în `Booking.Create`, unde avem acces la `room.Capacity`, lăsând `DateRange` să se ocupe doar de validarea capetelor intervalului și de `Overlaps`.
 
-## 3. Who knows about EF Core?
-Which classes in your project know about EF Core and which do not? What do you gain and what do you pay with Repository + Unit of Work?
-
-_(your answer here)_
-
-## 4. The flow of a request
-Draw in text (ASCII arrows) the path of a `POST /api/rooms/{roomId}/bookings` request through your project, with the **real** names of files and classes, from the endpoint to the database.
-
-_(your answer here)_
-
-## 5. What you rejected from what the AI gave you
-Give a concrete example of code or an idea proposed by the AI that you corrected or rejected, and say why.
-
-_(your answer here)_
-
-## 6. If you had 30 more minutes
-What would you improve and what risk did you leave in the project?
-
-_(your answer here)_
+## 6. Dacă aș mai avea 30 de minute
+->Aș adăuga protecție la concurență (de exemplu o tranzacție sau verificare optimistă) pentru verificările de suprapunere și limita zilnică din `CreateBookingHandler`, astfel încât două cereri simultane să nu poată rezerva același interval.
+->De asemenea, aș scrie teste automate de integrare pentru toate regulile R1–R11.

@@ -1,7 +1,5 @@
-# AI-LOG
+﻿# AI-LOG
 
-Write down, in order, what you asked the AI. It is not a punishment: a missing or false log lowers the level D grade.
-
-| Time (approx.) | What you asked (briefly) | What you kept | What you changed or rejected |
-|---|---|---|---|
-| _(fill in)_ | _(fill in)_ | _(fill in)_ | _(fill in)_ |
+| 09:05 | Explain the starter layered project and help refactor it into vertical slices, rich domain, Result, CQRS handlers, and EF Core SQLite | Kept the folder structure (`Common`, `Domain`, `Infrastructure`, `Features`), `Result<T>`, `ErrorHttpExtensions`, and EF Core configurations | Changed the `dotnet add package` command to `--version 10.0.*` so it matches `.NET 10` instead of `.NET 11` |
+| 09:28 | Help implement the new rules R9 (max 2 active bookings/day per participant), R10 (2h max for rooms with capacity > 10), and R11 (cancel >= 60 min before start with `TimeProvider`) | Kept `CountActiveForParticipantOnDayAsync` in `BookingRepository` and `TimeProvider` in `CancelBookingHandler` | Moved the max duration check from `DateRange.Create` to `Booking.Create` to check `room.Capacity`, and fixed a copy-paste mixup between `DateRange.cs` and `Booking.cs` |
+| 09:50 | Help structure what to include in `BUGS.md` and `DECISIONS.md` based on the final code | Used the list of starter bugs (R5–R8) and the request flow | Adjusted the wording to match my exact files and class names |

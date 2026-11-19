@@ -1,8 +1,9 @@
-# BUGS
+﻿# BUGS
 
-The starter contains behaviors that contradict `ASSIGNMENT.md`. Write here every discrepancy you found.
-Fill it in yourself, in your own words. There is no required number: what counts is that they are real.
+Codul de start conține comportamente care contrazic cerințele din `ASSIGNMENT.md`. Mai jos sunt discrepanțele găsite și modul în care au fost rezolvate.
 
-| Which rule from ASSIGNMENT.md is violated (R1–R8) | Where the problem was in the starter (file, approximate line) | How you discovered it (test, reading, AI) | What you changed |
-|---|---|---|---|
-| _(fill in)_ | _(fill in)_ | _(fill in)_ | _(fill in)_ |
+| Ce regulă din ASSIGNMENT.md este încălcată (R1–R8) | Unde era problema în starter (fișier, linie aproximativă) | Cum am descoperit-o (testare, citire cod, AI) | Ce am modificat |
+| R5 (o rezervare nu poate începe în trecut, iar timpul curent vine din `TimeProvider`) | `Services/BookingService.cs`, metoda `Create` (în jurul liniei 8) | Citirea codului din starter și compararea cu regulile din `ASSIGNMENT.md` | Am adăugat verificarea `range.StartUtc < nowUtc` în `Booking.Create` și am injectat `TimeProvider` în `CreateBookingHandler`. |
+| R6 (durata maximă a unei rezervări este de 4 ore) | `Services/BookingService.cs`, metoda `Create` (în jurul liniei 8) | Citirea metodei `BookingService.Create` | Am adăugat validarea duratei maxime în `Booking.Create` (4 ore pentru sălile cu capacitate <= 10 și 2 ore pentru capacitate > 10, conform R10). |
+| R7 (rezervările care se ating la capete sunt permise; rezervările anulate nu blochează sala) | `Services/BookingService.cs`, metoda `Create` (în jurul liniei 25) | Citirea condiției de suprapunere (`<=` în loc de `<` și lipsa verificării statusului) | Am schimbat verificarea din `DateRange.Overlaps` la `<` strict și am filtrat doar rezervările cu `Status == BookingStatus.Active` în `BookingRepository.GetActiveForRoomAsync`. |
+| R8 (anularea unei rezervări deja anulate trebuie să întoarcă 409) | `Services/BookingService.cs`, metoda `Cancel` (în jurul liniei 50) | Citirea metodei `BookingService.Cancel` | Am adăugat verificarea `if (Status == BookingStatus.Cancelled) return BookingErrors.AlreadyCancelled;` în `Booking.Cancel`, mapată automat la HTTP 409. |
